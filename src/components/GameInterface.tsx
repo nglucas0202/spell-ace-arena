@@ -6,19 +6,22 @@ import { Progress } from "@/components/ui/progress";
 import { useToast } from "@/hooks/use-toast";
 import { GameState, GameResult } from "@/types/game";
 import { getRandomWords, getDifficultyById } from "@/data/words";
+import { PenaltyType, calculatePenalty, getPenaltyForDifficulty } from "@/data/penalties";
 import { Timer, Trophy, Target, Zap, RotateCcw } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface GameInterfaceProps {
   difficulty: string;
+  penaltyType?: PenaltyType;
   onGameComplete: (result: GameResult) => void;
   onBack: () => void;
 }
 
 const GAME_DURATION = 120; // 2 minutes
 
-export const GameInterface = ({ difficulty, onGameComplete, onBack }: GameInterfaceProps) => {
+export const GameInterface = ({ difficulty, penaltyType, onGameComplete, onBack }: GameInterfaceProps) => {
   const { toast } = useToast();
+  const selectedPenalty = penaltyType || getPenaltyForDifficulty(difficulty);
   const [gameState, setGameState] = useState<GameState>({
     words: [],
     currentWordIndex: 0,
@@ -27,7 +30,8 @@ export const GameInterface = ({ difficulty, onGameComplete, onBack }: GameInterf
     mistakes: 0,
     timeRemaining: GAME_DURATION,
     gameStatus: 'waiting',
-    difficulty
+    difficulty,
+    penaltyType: selectedPenalty
   });
 
   const difficultyInfo = getDifficultyById(difficulty);
@@ -42,9 +46,10 @@ export const GameInterface = ({ difficulty, onGameComplete, onBack }: GameInterf
       mistakes: 0,
       timeRemaining: GAME_DURATION,
       gameStatus: 'waiting',
-      difficulty
+      difficulty,
+      penaltyType: selectedPenalty
     });
-  }, [difficulty]);
+  }, [difficulty, selectedPenalty]);
 
   useEffect(() => {
     initializeGame();
@@ -94,7 +99,8 @@ export const GameInterface = ({ difficulty, onGameComplete, onBack }: GameInterf
       totalTime,
       wordsPerMinute,
       accuracy,
-      difficulty
+      difficulty,
+      penaltyType: gameState.penaltyType
     };
 
     onGameComplete(result);
@@ -138,15 +144,30 @@ export const GameInterface = ({ difficulty, onGameComplete, onBack }: GameInterf
       });
     } else if (value.length > currentWord.length) {
       // Word is too long, it's a mistake
+      const newMistakeCount = gameState.mistakes + 1;
+      const penalty = calculatePenalty(
+        gameState.penaltyType, 
+        newMistakeCount, 
+        gameState.score, 
+        gameState.timeRemaining
+      );
+      
       setGameState(prev => ({
         ...prev,
-        mistakes: prev.mistakes + 1,
-        currentInput: ""
+        mistakes: newMistakeCount,
+        currentInput: "",
+        score: Math.max(0, prev.score - penalty.scoreDeduction),
+        timeRemaining: Math.max(0, prev.timeRemaining - penalty.timeDeduction),
+        gameStatus: penalty.gameOver ? 'finished' : prev.gameStatus
       }));
+      
+      if (penalty.gameOver) {
+        finishGame();
+      }
       
       toast({
         title: "Incorrect!",
-        description: "Try again - penalty applied",
+        description: penalty.message,
         variant: "destructive",
       });
     }

@@ -4,19 +4,32 @@ import { Button } from "@/components/ui/button";
 import { DifficultyCard } from "@/components/DifficultyCard";
 import { GameInterface } from "@/components/GameInterface";
 import { GameResults } from "@/components/GameResults";
+import { CompetitiveMode } from "@/components/CompetitiveMode";
 import { DIFFICULTY_LEVELS } from "@/data/words";
 import { GameResult } from "@/types/game";
-import { Zap, Users, Target } from "lucide-react";
+import { PenaltyType } from "@/data/penalties";
+import { Zap, Users, Target, Gamepad2 } from "lucide-react";
 
-type GameMode = 'menu' | 'difficulty' | 'game' | 'results';
+type GameMode = 'menu' | 'difficulty' | 'competitive' | 'game' | 'results';
 
 const Index = () => {
   const [gameMode, setGameMode] = useState<GameMode>('menu');
+  const [previousMode, setPreviousMode] = useState<GameMode>('menu');
   const [selectedDifficulty, setSelectedDifficulty] = useState<string>('');
+  const [selectedPenalty, setSelectedPenalty] = useState<PenaltyType>('none');
   const [gameResult, setGameResult] = useState<GameResult | null>(null);
 
   const handleDifficultySelect = (difficultyId: string) => {
     setSelectedDifficulty(difficultyId);
+    setSelectedPenalty('none'); // Reset to default for practice mode
+    setPreviousMode('difficulty');
+    setGameMode('game');
+  };
+
+  const handleCompetitiveStart = (difficultyId: string, penaltyType: PenaltyType) => {
+    setSelectedDifficulty(difficultyId);
+    setSelectedPenalty(penaltyType);
+    setPreviousMode('competitive');
     setGameMode('game');
   };
 
@@ -32,6 +45,7 @@ const Index = () => {
   const handleBackToMenu = () => {
     setGameMode('menu');
     setSelectedDifficulty('');
+    setSelectedPenalty('none');
     setGameResult(null);
   };
 
@@ -39,12 +53,26 @@ const Index = () => {
     setGameMode('difficulty');
   };
 
+  const handleBackToCompetitive = () => {
+    setGameMode('competitive');
+  };
+
   if (gameMode === 'game') {
     return (
       <GameInterface
         difficulty={selectedDifficulty}
+        penaltyType={selectedPenalty}
         onGameComplete={handleGameComplete}
-        onBack={handleBackToDifficulty}
+        onBack={previousMode === 'competitive' ? handleBackToCompetitive : handleBackToDifficulty}
+      />
+    );
+  }
+
+  if (gameMode === 'competitive') {
+    return (
+      <CompetitiveMode
+        onStartGame={handleCompetitiveStart}
+        onBack={handleBackToMenu}
       />
     );
   }
@@ -111,7 +139,7 @@ const Index = () => {
         </div>
 
         {/* Game Modes */}
-        <div className="grid grid-cols-1 md:grid-cols-1 gap-6 max-w-2xl mx-auto">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-4xl mx-auto">
           <Card className="p-8 bg-gradient-game border-primary/20 hover:border-primary/50 transition-all duration-300 hover:scale-105">
             <div className="text-center space-y-4">
               <div className="flex justify-center">
@@ -122,12 +150,32 @@ const Index = () => {
                 Sharpen your spelling skills across 6 difficulty levels
               </p>
               <Button 
-                variant="neon" 
+                variant="game" 
                 size="xl" 
                 onClick={() => setGameMode('difficulty')}
                 className="w-full"
               >
-                Start Practice
+                Quick Practice
+              </Button>
+            </div>
+          </Card>
+
+          <Card className="p-8 bg-gradient-game border-accent/20 hover:border-accent/50 transition-all duration-300 hover:scale-105">
+            <div className="text-center space-y-4">
+              <div className="flex justify-center">
+                <Gamepad2 className="h-16 w-16 text-accent" />
+              </div>
+              <h2 className="text-2xl font-bold text-accent">Competitive Mode</h2>
+              <p className="text-muted-foreground">
+                Custom challenges with penalty systems
+              </p>
+              <Button 
+                variant="neon" 
+                size="xl" 
+                onClick={() => setGameMode('competitive')}
+                className="w-full"
+              >
+                Custom Challenge
               </Button>
             </div>
           </Card>

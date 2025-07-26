@@ -1,3 +1,5 @@
+import { PenaltyType } from "@/data/penalties";
+
 export interface GameState {
   words: string[];
   currentWordIndex: number;
@@ -9,6 +11,7 @@ export interface GameState {
   startTime?: number;
   endTime?: number;
   difficulty: string;
+  penaltyType: PenaltyType;
 }
 
 export interface GameResult {
@@ -18,4 +21,5 @@ export interface GameResult {
   wordsPerMinute: number;
   accuracy: number;
   difficulty: string;
+  penaltyType: PenaltyType;
 }

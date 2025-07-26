@@ -2,6 +2,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { GameResult } from "@/types/game";
 import { getDifficultyById } from "@/data/words";
+import { PENALTY_SYSTEMS } from "@/data/penalties";
 import { Trophy, Target, Timer, Zap, RotateCcw, Home } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -13,7 +14,7 @@ interface GameResultsProps {
 
 export const GameResults = ({ result, onPlayAgain, onBackToMenu }: GameResultsProps) => {
   const difficultyInfo = getDifficultyById(result.difficulty);
-  
+  const penaltyInfo = PENALTY_SYSTEMS.find(p => p.id === result.penaltyType);
   const getPerformanceRating = (accuracy: number) => {
     if (accuracy >= 90) return { rating: "Champion!", color: "text-neon-cyan", glow: "shadow-accent" };
     if (accuracy >= 75) return { rating: "Excellent!", color: "text-success", glow: "shadow-success" };
@@ -100,6 +101,10 @@ export const GameResults = ({ result, onPlayAgain, onBackToMenu }: GameResultsPr
                 <span className={cn("font-medium", difficultyInfo?.color)}>
                   {difficultyInfo?.name}
                 </span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Penalty System:</span>
+                <span className="font-medium">{penaltyInfo?.name || 'None'}</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Challenge Rating:</span>
